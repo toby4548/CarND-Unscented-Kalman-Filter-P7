@@ -91,7 +91,62 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   Complete this function! Make sure you switch between lidar and radar
   measurements.
   */
+
+  if((meas_package.sensor_type_==MeasurementPackage::RADAR&&use_radar_)||
+     (meas_package.sensor_type_==MeasurementPackage::LASER&&use_laser_)) 
+  {
+    
+    ////Initialize
+    
+    if (!is_initialized_) {
+
+      //First Measurement
+      x_ << 1, 1, 1, 1, 0.1;
+      //initial covariance matrix
+      P_ << 0.15,    0, 0, 0, 0,
+               0, 0.15, 0, 0, 0,
+               0,    0, 1, 0, 0,
+               0,    0, 0, 1, 0,
+               0,    0, 0, 0, 1;
+      //initial timestamp
+      time_us_ = meas_package.timestamp_;
+  
+      if (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_)       {
+        x_(0) = meas_package.raw_measurements_(0);
+        x_(1) = meas_package.raw_measurements_(1);
+      }
+      else if (meas_package.sensor_type_==MeasurementPackage::RADAR&&use_radar_)      {  
+        
+        float ro     = meas_package.raw_measurements_(0);
+        float phi    = meas_package.raw_measurements_(1);
+        float ro_dot = meas_package.raw_measurements_(2);
+        x_(0) = ro * cos(phi);
+        x_(1) = ro * sin(phi);
+      }
+
+      is_initialized_ = true;
+
+      return;
+    }
+
+    ////Prediction
+    
+    float dt = (meas_package.timestamp_ - time_us_) / 1000000.0;
+    time_us = meas_package.timestamp_;
+   
+    Prediction(dt);
+
+    ////Update
+   
+    if (meas_package.sensor_type_==Measurement::LASER) {
+      UpdateLidar(meas_package);
+    }
+    else if (meas_package.sensor_type_==MeasurementPackage::RADAR) {
+      UpdateRadar(meas_package);
+    }
+  }
 }
+
 
 /**
  * Predicts sigma points, the state, and the state covariance matrix.
