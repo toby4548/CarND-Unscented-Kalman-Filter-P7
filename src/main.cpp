@@ -1,5 +1,6 @@
 #include <uWS/uWS.h>
 #include <iostream>
+#include <fstream>
 #include "json.hpp"
 #include <math.h>
 #include "ukf.h"
@@ -38,7 +39,15 @@ int main()
   vector<VectorXd> estimations;
   vector<VectorXd> ground_truth;
 
-  h.onMessage([&ukf,&tools,&estimations,&ground_truth](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+  //outputs
+  ofstream output;
+  output.open("output.txt");
+  int count_laser = 0;
+  int count_radar = 0;
+  int laser_95 = 0;
+  int radar_95 = 0;
+
+  h.onMessage([&ukf,&tools,&estimations,&ground_truth,&output,&count_laser,&count_radar,&laser_95,&radar_95](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -116,6 +125,8 @@ int main()
     	  double p_y = ukf.x_(1);
     	  double v  = ukf.x_(2);
     	  double yaw = ukf.x_(3);
+          double NIS_laser_ = ukf.NIS_laser_;
+          double NIS_radar_ = ukf.NIS_radar_;
 
     	  double v1 = cos(yaw)*v;
     	  double v2 = sin(yaw)*v;
@@ -125,6 +136,23 @@ int main()
     	  estimate(2) = v1;
     	  estimate(3) = v2;
     	  
+
+          if (sensor_type.compare("L") == 0) {
+            count_laser++;
+            if (NIS_laser_ < 5.991) laser_95++;
+          }
+          else {
+            if(sensor_type.compare("R") == 0) {
+              count_radar++;
+              if (NIS_laser_ <7.815) radar_95++;
+            }
+          }
+           
+          output << timestamp << "\t" <<NIS_laser_<< "\t" <<NIS_radar_<< "\n";          cout << "NIS Laser 95% : " << 100.0 * laser_95/count_laser << endl;
+          cout << "NIS Radar 95% : " << 100.0 * radar_95/count_radar << endl;   
+
+
+
     	  estimations.push_back(estimate);
 
     	  VectorXd RMSE = tools.CalculateRMSE(estimations, ground_truth);
