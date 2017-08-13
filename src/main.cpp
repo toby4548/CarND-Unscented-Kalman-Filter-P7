@@ -144,7 +144,7 @@ int main()
           else {
             if(sensor_type.compare("R") == 0) {
               count_radar++;
-              if (NIS_laser_ <7.815) radar_95++;
+              if (NIS_radar_ <7.815) radar_95++;
             }
           }
            
