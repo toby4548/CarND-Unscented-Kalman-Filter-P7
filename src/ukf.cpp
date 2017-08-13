@@ -24,10 +24,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 2;
+  std_a_ = 2;  //original:30
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.3;
+  std_yawdd_ = 0.3;  //original:30
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -478,8 +478,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     //state difference
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
     //angle normalization
-    while (z_diff(3)> M_PI) x_diff(3) -= 2.*M_PI;
-    while (z_diff(3)<-M_PI) x_diff(3) += 2.*M_PI;
+    while (x_diff(3)> M_PI) x_diff(3) -= 2.*M_PI;
+    while (x_diff(3)<-M_PI) x_diff(3) += 2.*M_PI;
  
     Tc = Tc + weights_(i) * x_diff * z_diff.transpose();
   }
