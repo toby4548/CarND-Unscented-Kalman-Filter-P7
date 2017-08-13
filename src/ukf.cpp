@@ -95,7 +95,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
   if(is_initialized_) {
   
-    double delta_t = double(meas_package.timestamp_ - time_us_) / 1000000.0;
+    double delta_t = double(meas_package.timestamp_ - time_us_) / 1000000;
   
     if(meas_package.sensor_type_ == MeasurementPackage::LASER&&use_laser_) {
       
@@ -231,8 +231,8 @@ void UKF::Prediction(double delta_t) {
 
     //avoid division by zero
     if (fabs(yawd) > 0.001) {
-      px_p = p_x + v / yawd * (sin(yaw + yawd * delta_t) - sin(yaw));
-      py_p = p_y + v / yawd * (cos(yaw) - cos(yaw + yawd * delta_t));
+      px_p = p_x + (v / yawd) * (sin(yaw + yawd * delta_t) - sin(yaw));
+      py_p = p_y + (v / yawd) * (cos(yaw) - cos(yaw + yawd * delta_t));
     }
     else {
       px_p = p_x + v * delta_t * cos(yaw);
@@ -311,12 +311,14 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
         0, 1, 0, 0, 0;
 
   //extract measurement as VectorXd
-  VectorXd z = meas_package.raw_measurements_;
+  VectorXd z = VectorXd(2); 
+  z(0) = meas_package.raw_measurements_[0];
+  z(1) = meas_package.raw_measurements_[1];
  
   //laser measurement covariance matrix
   VectorXd y = z  - H_ * x_;
   MatrixXd S = H_ * P_ * H_.transpose() + R_;
-  MatrixXd K = P_ * P_ * H_.transpose() * S.inverse(); 
+  MatrixXd K = P_ * H_.transpose() * S.inverse(); 
 
   //new estimation
   x_ = x_ + ( K * y );
@@ -378,11 +380,13 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     //Avoid division by 0
     if (fabs(rho) < 0.0001) {
       cout << "Error: Division by Zero!" << endl;
+      //cin << rho;
       rho = 0.0001;
     }
 
     double psi   = atan2(p_y, p_x);
     double rho_d = (p_x * v1 + p_y * v2) / rho;
+
 
     //measurement model
     Zsig(0,i) = rho;
